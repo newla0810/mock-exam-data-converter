@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>모의고사 성적 데이터 변환기 v5 [보문고]</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: #f0f2f5;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .container {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    width: 100%;
+    max-width: 640px;
+    overflow: hidden;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #1e3a5f, #2d5a8e);
+    color: #fff;
+    padding: 28px 32px 24px;
+  }
+
+  .header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+
+  .header p {
+    font-size: 13px;
+    font-weight: 300;
+    opacity: 0.8;
+  }
+
+  .body-area {
+    padding: 28px 32px;
+  }
+
+  /* 파일 드롭 영역 */
+  .drop-zone {
+    border: 2px dashed #c8d1dc;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fafbfc;
+    margin-bottom: 20px;
+  }
+
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: #2d5a8e;
+    background: #f0f5fb;
+  }
+
+  .drop-zone.has-file {
+    border-color: #22a06b;
+    background: #f0faf5;
+  }
+
+  .drop-zone-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+
+  .drop-zone-text {
+    font-size: 14px;
+    color: #626f86;
+    line-height: 1.6;
+  }
+
+  .drop-zone-text strong {
+    color: #2d5a8e;
+    cursor: pointer;
+  }
+
+  .file-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a3a5c;
+    margin-top: 8px;
+    word-break: break-all;
+  }
+
+  /* 버튼 */
+  .btn-convert {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #2d5a8e;
+    color: #fff;
+    margin-bottom: 20px;
+  }
+
+  .btn-convert:hover:not(:disabled) {
+    background: #1e3a5f;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(45,90,142,0.3);
+  }
+
+  .btn-convert:disabled {
+    background: #c8d1dc;
+    cursor: not-allowed;
+  }
+
+  /* 로그 영역 */
+  .log-area {
+    background: #1a1f2e;
+    border-radius: 10px;
+    padding: 16px;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+  }
+
+  .log-area.visible { display: block; }
+
+  .log-area pre {
+    font-family: 'Consolas', 'D2Coding', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #c8d6e5;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .log-area pre .success { color: #22a06b; }
+  .log-area pre .warn { color: #f5a623; }
+  .log-area pre .error { color: #ef5350; }
+  .log-area pre .info { color: #64b5f6; }
+
+  /* 결과 다운로드 */
+  .result-area {
+    display: none;
+    margin-top: 16px;
+    padding: 20px;
+    background: #f0faf5;
+    border-radius: 10px;
+    border: 1px solid #b8e6d0;
+    text-align: center;
+  }
+
+  .result-area.visible { display: block; }
+
+  .result-area p {
+    font-size: 14px;
+    color: #1a5c3a;
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  .btn-download {
+    display: inline-block;
+    padding: 10px 28px;
+    background: #22a06b;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-download:hover {
+    background: #1a8a5a;
+    transform: translateY(-1px);
+  }
+
+  .footer {
+    padding: 16px 32px;
+    border-top: 1px solid #eee;
+    text-align: center;
+    font-size: 11.5px;
+    color: #9aa5b4;
+  }
+
+  /* 스크롤바 */
+  .log-area::-webkit-scrollbar { width: 6px; }
+  .log-area::-webkit-scrollbar-track { background: transparent; }
+  .log-area::-webkit-scrollbar-thumb { background: #3a4256; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>📊 모의고사 성적 데이터 변환기 v5</h1>
+    <p>엑셀 파일을 data.js로 변환합니다 · 탐구과목 숫자→로마숫자 자동변환 · 소수점 보존</p>
+  </div>
+
+  <div class="body-area">
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-zone-icon">📁</div>
+      <div class="drop-zone-text">
+        엑셀 파일을 여기에 끌어다 놓거나<br>
+        <strong>클릭하여 파일 선택</strong>
+      </div>
+      <div class="file-name" id="fileName" style="display:none"></div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+    </div>
+
+    <button class="btn-convert" id="btnConvert" disabled>🔄 변환 시작</button>
+
+    <div class="log-area" id="logArea">
+      <pre id="logContent"></pre>
+    </div>
+
+    <div class="result-area" id="resultArea">
+      <p>✅ 변환 완료! 아래 버튼을 눌러 다운로드하세요.</p>
+      <button class="btn-download" id="btnDownload">💾 data.js 다운로드</button>
+      <div style="margin-top:8px;font-size:12px;color:#626f86;">이 파일을 HTML과 같은 폴더에 넣어주세요.</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    보문고등학교 교육연구부 · 변환기 v5 (웹 버전)
+  </div>
+</div>
+
+<script>
+// ===== UI 핸들링 =====
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileNameEl = document.getElementById('fileName');
+const btnConvert = document.getElementById('btnConvert');
+const logArea = document.getElementById('logArea');
+const logContent = document.getElementById('logContent');
+const resultArea = document.getElementById('resultArea');
+const btnDownload = document.getElementById('btnDownload');
+
+let selectedFile = null;
+let generatedJS = null;
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+function handleFile(f) {
+  selectedFile = f;
+  dropZone.classList.add('has-file');
+  dropZone.querySelector('.drop-zone-icon').textContent = '✅';
+  dropZone.querySelector('.drop-zone-text').innerHTML = '파일이 선택되었습니다';
+  fileNameEl.textContent = f.name;
+  fileNameEl.style.display = 'block';
+  btnConvert.disabled = false;
+  resultArea.classList.remove('visible');
+}
+
+btnConvert.addEventListener('click', () => {
+  if (!selectedFile) return;
+  btnConvert.disabled = true;
+  resultArea.classList.remove('visible');
+  logArea.classList.add('visible');
+  logContent.innerHTML = '';
+  startConversion(selectedFile);
+});
+
+function log(msg, cls) {
+  const span = document.createElement('span');
+  if (cls) span.className = cls;
+  span.textContent = msg + '\n';
+  logContent.appendChild(span);
+  logArea.scrollTop = logArea.scrollHeight;
+}
+
+// ===== 헬퍼 함수 =====
+function normalizeSubject(name) {
+  if (!name) return name;
+  name = String(name).trim();
+  if (name.endsWith('1')) name = name.slice(0, -1) + 'Ⅰ';
+  else if (name.endsWith('2')) name = name.slice(0, -1) + 'Ⅱ';
+  if (name.endsWith('I') && !name.endsWith('II')) name = name.slice(0, -1) + 'Ⅰ';
+  else if (name.endsWith('II')) name = name.slice(0, -2) + 'Ⅱ';
+  return name;
+}
+
+function isBlank(v) {
+  return v === undefined || v === null || v === '' || v === ' ' ||
+    (typeof v === 'number' && isNaN(v));
+}
+
+function safeInt(v) {
+  if (isBlank(v)) return null;
+  const n = Number(v);
+  if (isNaN(n)) return null;
+  return Math.trunc(n);
+}
+
+function safeNum(v) {
+  if (isBlank(v)) return null;
+  const n = Number(v);
+  if (isNaN(n)) return null;
+  return n;
+}
+
+function safeStr(v) {
+  if (isBlank(v)) return null;
+  const s = String(v).trim();
+  return (s && s !== 'undefined' && s !== 'NaN') ? s : null;
+}
+
+function roundN(v, digits) {
+  const m = Math.pow(10, digits);
+  return Math.round(v * m) / m;
+}
+
+// ===== 엑셀 시트 읽기 =====
+function readSheet(wb, sheetName) {
+  const ws = wb.Sheets[sheetName];
+  if (!ws) throw new Error(`시트 "${sheetName}"을 찾을 수 없습니다.`);
+  return XLSX.utils.sheet_to_json(ws, { defval: null });
+}
+
+function readScoresSheet(wb) {
+  const ws = wb.Sheets['성적데이터'];
+  if (!ws) throw new Error('시트 "성적데이터"를 찾을 수 없습니다.');
+
+  // 2행 헤더 → 플랫 컬럼명으로 매핑
+  const colNames = [
+    '시험ID','학번','반','번호','이름',
+    '국어_선택','국어_원점수','국어_표준점수','국어_백분위','국어_등급',
+    '수학_선택','수학_원점수','수학_표준점수','수학_백분위','수학_등급',
+    '영어_원점수','영어_등급',
+    '한국사_원점수','한국사_등급',
+    '탐구1_선택','탐구1_원점수','탐구1_표준점수','탐구1_백분위','탐구1_등급',
+    '탐구2_선택','탐구2_원점수','탐구2_표준점수','탐구2_백분위','탐구2_등급'
+  ];
+
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const rows = [];
+  // 데이터는 3행(index 2)부터 (0행=상위헤더, 1행=하위헤더)
+  for (let r = 2; r <= range.e.r; r++) {
+    const row = {};
+    let hasData = false;
+    for (let c = 0; c <= Math.min(range.e.c, colNames.length - 1); c++) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      const cell = ws[addr];
+      row[colNames[c]] = cell ? cell.v : null;
+      if (cell && cell.v !== null && cell.v !== undefined && cell.v !== '') hasData = true;
+    }
+    // 시험ID와 이름이 있는 행만
+    if (hasData && row['시험ID'] != null && row['이름'] != null) {
+      rows.push(row);
+    }
+  }
+  return rows;
+}
+
+// ===== 메인 변환 =====
+function startConversion(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+
+      log('=============================================');
+      log('📊 모의고사 성적 데이터 변환기 v5', 'info');
+      log('   (탐구과목 숫자→로마숫자 자동변환, 소수점 보존)');
+      log('=============================================');
+      log('');
+      log('📂 파일 로드 중: ' + file.name, 'info');
+
+      convert(wb);
+    } catch (err) {
+      log('');
+      log('❌ 오류 발생: ' + err.message, 'error');
+      log(err.stack || '', 'error');
+      btnConvert.disabled = false;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function convert(wb) {
+  // 1. 학생명단
+  const rawStudents = readSheet(wb, '학생명단');
+  const dfStudents = rawStudents
+    .filter(r => r['이름'] != null && String(r['이름']).trim() !== '')
+    .map(r => ({
+      이름: String(r['이름']).trim(),
+      반: r['반'] != null ? Math.trunc(Number(r['반'])) || 0 : 0,
+      번호: r['번호'] != null ? Math.trunc(Number(r['번호'])) || 0 : 0,
+      계열: r['계열'] != null ? String(r['계열']).trim() : '일반',
+      학번: r['학번'] != null ? String(r['학번']).trim() : null
+    }));
+  log('  ✓ 학생명단: ' + dfStudents.length + '명', 'success');
+
+  // 2. 시험목록
+  const rawExams = readSheet(wb, '시험목록');
+  const dfExams = rawExams
+    .filter(r => r['시험ID'] != null)
+    .map(r => ({
+      시험ID: String(r['시험ID']).trim(),
+      시험명: String(r['시험명'] || '').trim(),
+      학년: Math.trunc(Number(r['학년'])) || 0,
+      월: Math.trunc(Number(r['월'])) || 0
+    }));
+  log('  ✓ 시험목록: ' + dfExams.length + '개', 'success');
+
+  // 3. 성적데이터
+  const dfScores = readScoresSheet(wb);
+  log('  ✓ 성적데이터: ' + dfScores.length + '건', 'success');
+
+  log('');
+  log('🔄 데이터 변환 중...', 'info');
+
+  // 상수 정의
+  const subjectConfigStr = `const subjectConfig = {
+    kor: { name: '국어', color: '#3B82F6', selections: ['화법과작문', '언어와매체'] },
+    math: { name: '수학', color: '#10B981', selections: ['확률과통계', '미적분', '기하'] },
+    eng: { name: '영어', color: '#F59E0B', selections: null },
+    hist: { name: '한국사', color: '#6366F1', selections: null },
+    social: { name: '사회탐구', color: '#EF4444', selections: ['생활과윤리', '윤리와사상', '한국지리', '세계지리', '동아시아사', '세계사', '정치와법', '경제', '사회문화'] },
+    science: { name: '과학탐구', color: '#8B5CF6', selections: ['물리학Ⅰ', '화학Ⅰ', '생명과학Ⅰ', '지구과학Ⅰ', '물리학Ⅱ', '화학Ⅱ', '생명과학Ⅱ', '지구과학Ⅱ'] }
+  };`;
+
+  const socialSubjectsStr = "const socialSubjects = ['생활과윤리', '윤리와사상', '한국지리', '세계지리', '동아시아사', '세계사', '정치와법', '경제', '사회문화'];";
+  const sciSubjectsStr = "const sciSubjects = ['물리학Ⅰ', '화학Ⅰ', '생명과학Ⅰ', '지구과학Ⅰ', '물리학Ⅱ', '화학Ⅱ', '생명과학Ⅱ', '지구과학Ⅱ'];";
+  const chartColorsStr = "const chartColors = { social: ['#EF4444','#F97316','#FBBF24','#84CC16','#22C55E','#14B8A6','#06B6D4','#0EA5E9','#8B5CF6'], science: ['#7C3AED','#A855F7','#D946EF','#EC4899','#F43F5E','#FB7185','#FDA4AF','#FECDD3'] };";
+
+  // 시험 목록 변환
+  const exams = dfExams.map(r => ({
+    id: r.시험ID,
+    grade: r.학년,
+    month: r.월,
+    name: r.시험명
+  }));
+  exams.sort((a, b) => (a.grade - b.grade) || (a.month - b.month));
+
+  // 이름 → 학번 매핑
+  const nameToId = {};
+  dfStudents.forEach(r => {
+    if (r.이름 && r.학번) nameToId[r.이름] = r.학번;
+  });
+
+  // 학생 목록 생성
+  const students = [];
+  const studentSelections = {};
+
+  dfStudents.forEach(r => {
+    if (!r.학번) return;
+    students.push({
+      id: r.학번,
+      name: r.이름,
+      class: r.반,
+      number: r.번호,
+      track: r.계열
+    });
+    studentSelections[r.학번] = { kor: null, math: null, sci1: null, sci2: null };
+  });
+
+  // 학번 찾기 함수
+  function getStudentId(row) {
+    if (row['학번'] != null) {
+      let sid = String(row['학번']).trim();
+      if (sid.includes('.')) {
+        try { sid = String(Math.trunc(Number(sid))); } catch(e) {}
+      }
+      if (sid && sid !== 'NaN' && sid !== 'null' && sid !== 'undefined') return sid;
+    }
+    const name = row['이름'] != null ? String(row['이름']).trim() : null;
+    if (name && nameToId[name]) return nameToId[name];
+    return null;
+  }
+
+  // 성적 데이터 변환
+  const scoresData = [];
+  let skipped = 0;
+
+  dfScores.forEach(row => {
+    const studentId = getStudentId(row);
+    const examId = row['시험ID'] != null ? String(row['시험ID']).trim() : null;
+
+    if (!studentId || !examId) { skipped++; return; }
+
+    const score = { studentId, examId };
+
+    // 국어
+    const korGrade = safeInt(row['국어_등급']);
+    if (korGrade !== null && korGrade > 0) {
+      score.kor = {
+        selection: safeStr(row['국어_선택']),
+        raw: safeNum(row['국어_원점수']),
+        std: safeNum(row['국어_표준점수']),
+        pct: safeNum(row['국어_백분위']),
+        grade: korGrade
+      };
+      if (studentSelections[studentId] && safeStr(row['국어_선택'])) {
+        studentSelections[studentId].kor = safeStr(row['국어_선택']);
+      }
+    }
+
+    // 수학
+    const mathGrade = safeInt(row['수학_등급']);
+    if (mathGrade !== null && mathGrade > 0) {
+      score.math = {
+        selection: safeStr(row['수학_선택']),
+        raw: safeNum(row['수학_원점수']),
+        std: safeNum(row['수학_표준점수']),
+        pct: safeNum(row['수학_백분위']),
+        grade: mathGrade
+      };
+      if (studentSelections[studentId] && safeStr(row['수학_선택'])) {
+        studentSelections[studentId].math = safeStr(row['수학_선택']);
+      }
+    }
+
+    // 영어
+    const engGrade = safeInt(row['영어_등급']);
+    if (engGrade !== null && engGrade > 0) {
+      score.eng = {
+        raw: safeNum(row['영어_원점수']),
+        grade: engGrade
+      };
+    }
+
+    // 한국사
+    const histGrade = safeInt(row['한국사_등급']);
+    if (histGrade !== null && histGrade > 0) {
+      score.hist = {
+        raw: safeNum(row['한국사_원점수']),
+        grade: histGrade
+      };
+    }
+
+    // 탐구1 (숫자→로마숫자 자동변환)
+    const sci1Grade = safeInt(row['탐구1_등급']);
+    if (sci1Grade !== null && sci1Grade > 0) {
+      score.sci1 = {
+        selection: safeStr(row['탐구1_선택']) ? normalizeSubject(row['탐구1_선택']) : null,
+        raw: safeNum(row['탐구1_원점수']),
+        std: safeNum(row['탐구1_표준점수']),
+        pct: safeNum(row['탐구1_백분위']),
+        grade: sci1Grade
+      };
+      if (studentSelections[studentId] && safeStr(row['탐구1_선택'])) {
+        studentSelections[studentId].sci1 = normalizeSubject(row['탐구1_선택']);
+      }
+    }
+
+    // 탐구2 (숫자→로마숫자 자동변환)
+    const sci2Grade = safeInt(row['탐구2_등급']);
+    if (sci2Grade !== null && sci2Grade > 0) {
+      score.sci2 = {
+        selection: safeStr(row['탐구2_선택']) ? normalizeSubject(row['탐구2_선택']) : null,
+        raw: safeNum(row['탐구2_원점수']),
+        std: safeNum(row['탐구2_표준점수']),
+        pct: safeNum(row['탐구2_백분위']),
+        grade: sci2Grade
+      };
+      if (studentSelections[studentId] && safeStr(row['탐구2_선택'])) {
+        studentSelections[studentId].sci2 = normalizeSubject(row['탐구2_선택']);
+      }
+    }
+
+    // 합계/평균 계산
+    const korRaw = (score.kor && score.kor.raw) || 0;
+    const mathRaw = (score.math && score.math.raw) || 0;
+    const engRaw = (score.eng && score.eng.raw) || 0;
+    const histRaw = (score.hist && score.hist.raw) || 0;
+    const sci1Raw = (score.sci1 && score.sci1.raw) || 0;
+    const sci2Raw = (score.sci2 && score.sci2.raw) || 0;
+
+    const korStd = (score.kor && score.kor.std) || 0;
+    const mathStd = (score.math && score.math.std) || 0;
+    const sci1Std = (score.sci1 && score.sci1.std) || 0;
+    const sci2Std = (score.sci2 && score.sci2.std) || 0;
+
+    const korPct = (score.kor && score.kor.pct) || 0;
+    const mathPct = (score.math && score.math.pct) || 0;
+    const sci1Pct = (score.sci1 && score.sci1.pct) || 0;
+    const sci2Pct = (score.sci2 && score.sci2.pct) || 0;
+
+    const korG = (score.kor && score.kor.grade) || 9;
+    const mathG = (score.math && score.math.grade) || 9;
+    const engG = (score.eng && score.eng.grade) || 9;
+    const sci1G = (score.sci1 && score.sci1.grade) || 9;
+    const sci2G = (score.sci2 && score.sci2.grade) || 9;
+
+    score.sumRaw = korRaw + mathRaw + engRaw + histRaw + sci1Raw + sci2Raw;
+
+    if (korStd || mathStd || sci1Std || sci2Std) {
+      score.sumStd = korStd + mathStd + sci1Std + sci2Std;
+    } else {
+      score.sumStd = null;
+    }
+
+    const sciAvgPct = (sci1Pct + sci2Pct) > 0 ? (sci1Pct + sci2Pct) / 2 : 0;
+    if (korPct || mathPct || sciAvgPct) {
+      score.avgPct = roundN((korPct + mathPct + sciAvgPct) / 3, 1);
+    } else {
+      score.avgPct = null;
+    }
+
+    score.avgGrade = roundN((korG + mathG + engG + sci1G + sci2G) / 5, 2);
+
+    // 최저등급합
+    const sciTop = Math.min(sci1G, sci2G);
+    const sciAvg = (sci1G + sci2G) / 2;
+
+    const grades1sci = [korG, mathG, engG, sciTop].sort((a, b) => a - b);
+    const grades2sci = [korG, mathG, engG, sciAvg].sort((a, b) => a - b);
+
+    score.min2_1sci = grades1sci[0] + grades1sci[1];
+    score.min3_1sci = grades1sci[0] + grades1sci[1] + grades1sci[2];
+    score.min2_2sci = grades2sci[0] + grades2sci[1];
+    score.min3_2sci = grades2sci[0] + grades2sci[1] + grades2sci[2];
+
+    scoresData.push(score);
+  });
+
+  // 학생 데이터에 선택과목 추가
+  students.forEach(s => {
+    s.selections = studentSelections[s.id] || { kor: null, math: null, sci1: null, sci2: null };
+  });
+
+  // 석차 계산
+  exams.forEach(exam => {
+    const examScores = scoresData.filter(s => s.examId === exam.id);
+
+    examScores.sort((a, b) => -((a.sumRaw || 0) - (b.sumRaw || 0)));
+    examScores.forEach((s, i) => { s.rankRaw = i + 1; });
+
+    examScores.sort((a, b) => -((a.sumStd || 0) - (b.sumStd || 0)));
+    examScores.forEach((s, i) => { s.rankStd = i + 1; });
+
+    examScores.sort((a, b) => (a.avgGrade || 9) - (b.avgGrade || 9));
+    examScores.forEach((s, i) => {
+      s.rankGrade = i + 1;
+      s.totalCount = examScores.length;
+    });
+  });
+
+  log('  ✓ 학생 ' + students.length + '명 변환 완료', 'success');
+  log('  ✓ 시험 ' + exams.length + '개 변환 완료', 'success');
+  log('  ✓ 성적 ' + scoresData.length + '건 변환 완료', 'success');
+  if (skipped > 0) {
+    log('  ⚠ ' + skipped + '건 건너뜀 (학번 또는 시험ID 누락)', 'warn');
+  }
+
+  // 파일 생성
+  log('');
+  log('📝 data.js 파일 생성 중...', 'info');
+
+  const now = new Date();
+  const dateStr = now.getFullYear() + '-' +
+    String(now.getMonth()+1).padStart(2,'0') + '-' +
+    String(now.getDate()).padStart(2,'0') + ' ' +
+    String(now.getHours()).padStart(2,'0') + ':' +
+    String(now.getMinutes()).padStart(2,'0') + ':' +
+    String(now.getSeconds()).padStart(2,'0');
+
+  let output = '';
+  output += '// data.js\n';
+  output += '// 생성일시: ' + dateStr + '\n';
+  output += '// 이 코드는 전역 변수 window.MockData에 데이터를 담습니다.\n\n';
+  output += '(function() {\n';
+  output += '  ' + subjectConfigStr + '\n\n';
+  output += '  ' + socialSubjectsStr + '\n';
+  output += '  ' + sciSubjectsStr + '\n';
+  output += '  ' + chartColorsStr + '\n\n';
+
+  output += '  const exams = ';
+  output += JSON.stringify(exams, null, 4).replace(/\n/g, '\n  ');
+  output += ';\n\n';
+
+  output += '  const students = ';
+  output += JSON.stringify(students, null, 4).replace(/\n/g, '\n  ');
+  output += ';\n\n';
+
+  output += '  const scoresData = ';
+  output += JSON.stringify(scoresData, null, 4).replace(/\n/g, '\n  ');
+  output += ';\n\n';
+
+  output += '  // 전역 객체에 할당\n';
+  output += '  window.MockData = {\n';
+  output += '    subjectConfig,\n';
+  output += '    socialSubjects,\n';
+  output += '    sciSubjects,\n';
+  output += '    chartColors,\n';
+  output += '    exams,\n';
+  output += '    students,\n';
+  output += '    scoresData\n';
+  output += '  };\n';
+  output += '})();\n';
+
+  generatedJS = output;
+
+  log('');
+  log('✅ 변환 완료!', 'success');
+  log('=============================================');
+  log('📁 data.js 다운로드 준비 완료', 'info');
+  log('   이 파일을 HTML과 같은 폴더에 넣어주세요.');
+  log('=============================================');
+
+  resultArea.classList.add('visible');
+  btnConvert.disabled = false;
+}
+
+// 다운로드
+btnDownload.addEventListener('click', () => {
+  if (!generatedJS) return;
+  const blob = new Blob([generatedJS], { type: 'text/javascript; charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'data.js';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
