@@ -25,7 +25,7 @@
     border-radius: 16px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.08);
     width: 100%;
-    max-width: 640px;
+    max-width: 720px;
     overflow: hidden;
   }
 
@@ -199,6 +199,146 @@
     color: #9aa5b4;
   }
 
+  /* 구분선 */
+  .divider {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 16px;
+    color: #626f86;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .divider.visible { display: flex; }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e0e4ea;
+  }
+
+  .section-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a3a5c;
+    margin-bottom: 12px;
+  }
+
+  /* HTML 합치기 영역 */
+  .merge-area {
+    display: none;
+  }
+  .merge-area.visible { display: block; }
+
+  .merge-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: #626f86;
+    margin-bottom: 14px;
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .status-dot.inactive { background: #d1d5db; }
+  .status-dot.ready { background: #22a06b; }
+
+  .merge-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .merge-col { flex: 1; min-width: 0; }
+
+  .merge-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1a3a5c;
+    margin-bottom: 8px;
+  }
+
+  .merge-drop-zone {
+    border: 2px dashed #c8d1dc;
+    border-radius: 10px;
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fafbfc;
+    font-size: 13px;
+    color: #626f86;
+  }
+  .merge-drop-zone:hover, .merge-drop-zone.dragover {
+    border-color: #2d5a8e;
+    background: #f0f5fb;
+  }
+  .merge-drop-zone.has-file {
+    border-color: #6366f1;
+    background: #f5f3ff;
+  }
+  .merge-drop-zone strong { color: #2d5a8e; cursor: pointer; }
+  .merge-file-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4338ca;
+    margin-top: 6px;
+    word-break: break-all;
+  }
+
+  .btn-merge {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #4338ca;
+    color: #fff;
+    margin-top: 12px;
+  }
+  .btn-merge:hover:not(:disabled) {
+    background: #3730a3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(67,56,202,0.3);
+  }
+  .btn-merge:disabled { background: #c8d1dc; cursor: not-allowed; }
+
+  .merge-result {
+    display: none;
+    margin-top: 12px;
+    padding: 16px;
+    background: #f5f3ff;
+    border-radius: 8px;
+    border: 1px solid #c7d2fe;
+    text-align: center;
+  }
+  .merge-result.visible { display: block; }
+  .merge-result p { font-size: 13px; color: #3730a3; margin-bottom: 10px; font-weight: 500; }
+
+  .btn-download-merge {
+    display: inline-block;
+    padding: 9px 24px;
+    background: #4338ca;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-download-merge:hover { background: #3730a3; transform: translateY(-1px); }
+
   /* 스크롤바 */
   .log-area::-webkit-scrollbar { width: 6px; }
   .log-area::-webkit-scrollbar-track { background: transparent; }
@@ -210,10 +350,12 @@
 <div class="container">
   <div class="header">
     <h1>📊 모의고사 성적 데이터 변환기 v5</h1>
-    <p>엑셀 파일을 data.js로 변환합니다 · 탐구과목 숫자→로마숫자 자동변환 · 소수점 보존</p>
+    <p>엑셀 → data.js 변환 · HTML 합치기 · 탐구과목 숫자→로마숫자 자동변환 · 소수점 보존</p>
   </div>
 
   <div class="body-area">
+    <!-- ===== 섹션 1: 엑셀 → data.js ===== -->
+    <div class="section-label">① 엑셀 → data.js 변환</div>
     <div class="drop-zone" id="dropZone">
       <div class="drop-zone-icon">📁</div>
       <div class="drop-zone-text">
@@ -235,6 +377,41 @@
       <button class="btn-download" id="btnDownload">💾 data.js 다운로드</button>
       <div style="margin-top:8px;font-size:12px;color:#626f86;">이 파일을 HTML과 같은 폴더에 넣어주세요.</div>
     </div>
+
+    <!-- ===== 섹션 2: HTML + data.js 합치기 ===== -->
+    <div class="divider visible">HTML에 data.js 합치기</div>
+
+    <div class="merge-area visible" id="mergeArea">
+      <div class="merge-status" id="mergeStatus">
+        <span class="status-dot inactive"></span>
+        <span id="mergeStatusText">data.js 없음 — 위에서 엑셀을 변환하거나, 아래에서 data.js 파일을 직접 선택하세요</span>
+      </div>
+
+      <div class="merge-row">
+        <div class="merge-col">
+          <div class="merge-label">📄 HTML 파일</div>
+          <div class="merge-drop-zone" id="mergeHtmlDropZone">
+            HTML 파일 선택 또는 끌어다 놓기
+            <div class="merge-file-name" id="mergeHtmlFileName" style="display:none"></div>
+            <input type="file" id="mergeHtmlFileInput" accept=".html,.htm" style="display:none">
+          </div>
+        </div>
+        <div class="merge-col">
+          <div class="merge-label">📦 data.js 파일 <span style="font-weight:400;color:#9aa5b4;font-size:11px;">(엑셀 변환 시 자동 입력)</span></div>
+          <div class="merge-drop-zone" id="mergeDataDropZone">
+            data.js 파일 선택 또는 끌어다 놓기
+            <div class="merge-file-name" id="mergeDataFileName" style="display:none"></div>
+            <input type="file" id="mergeDataFileInput" accept=".js" style="display:none">
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-merge" id="btnMerge" disabled>🔗 HTML에 data.js 삽입</button>
+      <div class="merge-result" id="mergeResult">
+        <p>✅ 합치기 완료! data.js가 HTML 안에 포함되었습니다.</p>
+        <button class="btn-download-merge" id="btnDownloadMerge">💾 통합 HTML 다운로드</button>
+      </div>
+    </div>
   </div>
 
   <div class="footer">
@@ -255,6 +432,25 @@ const btnDownload = document.getElementById('btnDownload');
 
 let selectedFile = null;
 let generatedJS = null;
+
+// 합치기 관련
+const mergeArea = document.getElementById('mergeArea');
+const mergeHtmlDropZone = document.getElementById('mergeHtmlDropZone');
+const mergeHtmlFileInput = document.getElementById('mergeHtmlFileInput');
+const mergeHtmlFileNameEl = document.getElementById('mergeHtmlFileName');
+const mergeDataDropZone = document.getElementById('mergeDataDropZone');
+const mergeDataFileInput = document.getElementById('mergeDataFileInput');
+const mergeDataFileNameEl = document.getElementById('mergeDataFileName');
+const mergeStatus = document.getElementById('mergeStatus');
+const mergeStatusText = document.getElementById('mergeStatusText');
+const btnMerge = document.getElementById('btnMerge');
+const mergeResult = document.getElementById('mergeResult');
+const btnDownloadMerge = document.getElementById('btnDownloadMerge');
+
+let selectedHtmlFile = null;
+let mergedHTML = null;
+let mergeDataJS = null; // data.js 내용 (엑셀 변환 결과 또는 파일 직접 로드)
+let mergeDataSource = null; // 'excel' 또는 'file'
 
 dropZone.addEventListener('click', () => fileInput.click());
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
@@ -730,9 +926,16 @@ function convert(wb) {
 
   resultArea.classList.add('visible');
   btnConvert.disabled = false;
+
+  // 합치기 섹션에 변환 결과 자동 입력
+  mergeDataJS = generatedJS;
+  mergeDataSource = 'excel';
+  mergeDataDropZone.classList.add('has-file');
+  mergeDataDropZone.innerHTML = '✅ 엑셀 변환 결과 사용 중<div class="merge-file-name">위 변환 결과가 자동 입력됨</div>';
+  updateMergeStatus();
 }
 
-// 다운로드
+// data.js 다운로드
 btnDownload.addEventListener('click', () => {
   if (!generatedJS) return;
   const blob = new Blob([generatedJS], { type: 'text/javascript; charset=utf-8' });
@@ -740,6 +943,153 @@ btnDownload.addEventListener('click', () => {
   const a = document.createElement('a');
   a.href = url;
   a.download = 'data.js';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// ===== HTML 합치기 =====
+
+function updateMergeStatus() {
+  const dot = mergeStatus.querySelector('.status-dot');
+  if (mergeDataJS) {
+    dot.className = 'status-dot ready';
+    const src = mergeDataSource === 'excel' ? '엑셀 변환 결과' : 'data.js 파일';
+    mergeStatusText.textContent = 'data.js 준비됨 (' + src + ')';
+  } else {
+    dot.className = 'status-dot inactive';
+    mergeStatusText.textContent = 'data.js 없음 — 위에서 엑셀을 변환하거나, 아래에서 data.js 파일을 직접 선택하세요';
+  }
+  btnMerge.disabled = !(mergeDataJS && selectedHtmlFile);
+}
+
+// HTML 파일 드롭/선택
+mergeHtmlDropZone.addEventListener('click', () => mergeHtmlFileInput.click());
+mergeHtmlDropZone.addEventListener('dragover', e => { e.preventDefault(); mergeHtmlDropZone.classList.add('dragover'); });
+mergeHtmlDropZone.addEventListener('dragleave', () => mergeHtmlDropZone.classList.remove('dragover'));
+mergeHtmlDropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  mergeHtmlDropZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) handleMergeHtml(f);
+});
+mergeHtmlFileInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleMergeHtml(e.target.files[0]);
+});
+
+function handleMergeHtml(f) {
+  selectedHtmlFile = f;
+  mergeHtmlDropZone.classList.add('has-file');
+  mergeHtmlDropZone.innerHTML = '\uD83D\uDCC4 ' + f.name + '<div class="merge-file-name">' + (f.size / 1024).toFixed(0) + 'KB</div>';
+  mergeResult.classList.remove('visible');
+  updateMergeStatus();
+}
+
+// data.js 파일 드롭/선택
+mergeDataDropZone.addEventListener('click', () => mergeDataFileInput.click());
+mergeDataDropZone.addEventListener('dragover', e => { e.preventDefault(); mergeDataDropZone.classList.add('dragover'); });
+mergeDataDropZone.addEventListener('dragleave', () => mergeDataDropZone.classList.remove('dragover'));
+mergeDataDropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  mergeDataDropZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) handleMergeData(f);
+});
+mergeDataFileInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleMergeData(e.target.files[0]);
+});
+
+function handleMergeData(f) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    mergeDataJS = e.target.result;
+    mergeDataSource = 'file';
+    mergeDataDropZone.classList.add('has-file');
+    mergeDataDropZone.innerHTML = '\uD83D\uDCE6 ' + f.name + '<div class="merge-file-name">' + (f.size / 1024).toFixed(0) + 'KB</div>';
+    mergeResult.classList.remove('visible');
+    updateMergeStatus();
+  };
+  reader.readAsText(f, 'UTF-8');
+}
+
+// 합치기 실행
+btnMerge.addEventListener('click', () => {
+  if (!selectedHtmlFile || !mergeDataJS) return;
+  btnMerge.disabled = true;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const htmlContent = e.target.result;
+
+      const SCR_OPEN = '\x3Cscript';
+      const SCR_CLOSE = '\x3C/script\x3E';
+      const patterns = [
+        new RegExp(SCR_OPEN + '\\s+src\\s*=\\s*["\']\\.\\/data\\.js["\']\\s*>' + SCR_CLOSE, 'gi'),
+        new RegExp(SCR_OPEN + '\\s+src\\s*=\\s*["\']data\\.js["\']\\s*>' + SCR_CLOSE, 'gi'),
+        new RegExp(SCR_OPEN + '\\s+src\\s*=\\s*["\']\\.\\/data\\.js["\']\\s*\\/>', 'gi'),
+        new RegExp(SCR_OPEN + '\\s+src\\s*=\\s*["\']data\\.js["\']\\s*\\/>', 'gi')
+      ];
+
+      const inlineTag = '\x3Cscript\x3E\n' + mergeDataJS + '\x3C/script\x3E';
+
+      let result = htmlContent;
+      let replaced = false;
+
+      for (const pattern of patterns) {
+        if (pattern.test(result)) {
+          result = result.replace(pattern, inlineTag);
+          replaced = true;
+          break;
+        }
+      }
+
+      if (!replaced) {
+        const genericPattern = new RegExp(SCR_OPEN + '\\s+src\\s*=\\s*["\'][^"\']*data[^"\']*\\.js["\']\\s*>' + SCR_CLOSE, 'gi');
+        if (genericPattern.test(result)) {
+          result = result.replace(genericPattern, inlineTag);
+          replaced = true;
+        }
+      }
+
+      if (!replaced) {
+        logArea.classList.add('visible');
+        log('');
+        log('\u26A0 HTML에서 data.js 참조를 찾지 못했습니다.', 'warn');
+        log('  ' + SCR_OPEN + ' src="./data.js">' + SCR_CLOSE + ' 형태가 있어야 합니다.', 'warn');
+        btnMerge.disabled = false;
+        return;
+      }
+
+      mergedHTML = result;
+      logArea.classList.add('visible');
+      log('');
+      log('\uD83D\uDD17 HTML + data.js 합치기 완료!', 'success');
+      log('  원본: ' + selectedHtmlFile.name, 'info');
+      log('  합친 크기: ' + (result.length / 1024).toFixed(0) + 'KB', 'info');
+
+      mergeResult.classList.add('visible');
+      btnMerge.disabled = false;
+    } catch (err) {
+      logArea.classList.add('visible');
+      log('');
+      log('\u274C 합치기 오류: ' + err.message, 'error');
+      btnMerge.disabled = false;
+    }
+  };
+  reader.readAsText(selectedHtmlFile, 'UTF-8');
+});
+
+// 통합 HTML 다운로드
+btnDownloadMerge.addEventListener('click', () => {
+  if (!mergedHTML) return;
+  const fileName = selectedHtmlFile ? selectedHtmlFile.name : 'merged.html';
+  const blob = new Blob([mergedHTML], { type: 'text/html; charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
